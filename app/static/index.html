@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CareCircle — Care for Kamla Devi, together</title>
+<style>
+  :root{
+    --cream:#FFF8EE; --paper:#FFFDF8; --ink:#2B2118; --ink-soft:#5C4A38;
+    --terra:#C4502B; --terra-dark:#9A3B1E; --leaf:#2E5E4E; --leaf-dark:#1F4436;
+    --marigold:#E9A13B; --rose:#B3372F; --line:#EAD9C2; --focus:#1457D9;
+    --radius:16px; --base:18px; --tap:52px;
+  }
+  *{box-sizing:border-box}
+  html{font-size:var(--base)}
+  body.elder-mode{--base:22px; --tap:64px}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:Georgia,"Times New Roman",serif; line-height:1.2; margin:0 0 .4em}
+  a{color:var(--terra-dark)}
+  :focus-visible{outline:4px solid var(--focus); outline-offset:2px; border-radius:6px}
+  button{font:inherit; cursor:pointer}
+  .skip{position:absolute; left:-999px; top:0; background:var(--ink); color:#fff; padding:.6em 1em; z-index:50}
+  .skip:focus{left:8px; top:8px}
+
+  header.topbar{
+    background:linear-gradient(135deg,var(--terra) 0%,var(--terra-dark) 100%);
+    color:#FFF6EA; padding:1rem clamp(1rem,4vw,2.5rem);
+    display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between;
+  }
+  .brand{display:flex; align-items:center; gap:.8rem}
+  .brand .mark{
+    width:52px; height:52px; border-radius:50%; flex:none;
+    background:radial-gradient(circle at 35% 35%, var(--marigold), var(--terra));
+    border:3px solid #FFE9C9; display:grid; place-items:center;
+    font-family:Georgia,serif; font-size:1.5rem; color:#fff;
+  }
+  .brand h1{font-size:1.6rem; margin:0; color:#FFF6EA}
+  .brand p{margin:0; opacity:.92; font-size:.95rem}
+  .top-actions{display:flex; gap:.6rem; flex-wrap:wrap; align-items:center}
+  .btn{
+    min-height:var(--tap); padding:.55em 1.1em; border-radius:999px;
+    border:2px solid transparent; font-weight:600; background:#fff; color:var(--ink);
+  }
+  .btn.primary{background:var(--leaf); color:#fff}
+  .btn.primary:hover{background:var(--leaf-dark)}
+  .btn.warm{background:var(--terra); color:#fff}
+  .btn.warm:hover{background:var(--terra-dark)}
+  .btn.ghost{background:transparent; color:#FFF6EA; border-color:#FFD9AE}
+  .btn.plain{background:var(--paper); border-color:var(--line); color:var(--ink)}
+  .btn.danger{background:#fff; border-color:var(--rose); color:var(--rose)}
+  .btn[disabled]{opacity:.55; cursor:wait}
+
+  main{max-width:1060px; margin:0 auto; padding:1.2rem clamp(1rem,4vw,2rem) 3rem}
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:1.2rem 1.3rem; margin-bottom:1.1rem;
+    box-shadow:0 2px 10px rgba(90,55,20,.06);
+  }
+  .card h2{font-size:1.45rem}
+  .muted{color:var(--ink-soft)}
+  .big{font-size:1.2rem}
+
+  /* Login */
+  .login-wrap{max-width:560px; margin:2rem auto}
+  label{font-weight:600; display:block; margin:.9rem 0 .3rem}
+  input,select,textarea{
+    font:inherit; width:100%; padding:.65em .8em; border:2px solid #CBB493;
+    border-radius:10px; background:#fff; color:var(--ink); min-height:var(--tap);
+  }
+  input[type="checkbox"]{width:1.4em; height:1.4em; min-height:0; accent-color:var(--leaf)}
+  .demo-note{
+    background:#FDF0D5; border:2px dashed var(--marigold); border-radius:12px;
+    padding:.8rem 1rem; margin-top:1rem;
+  }
+  .demo-note code{font-size:1.15em; font-weight:700; background:#fff; padding:.1em .4em; border-radius:6px}
+  .error{background:#FBE3E0; border:1px solid var(--rose); color:#7C1F18;
+    border-radius:10px; padding:.7rem 1rem; margin-top:1rem}
+  .ok-note{background:#E2F0E4; border:1px solid var(--leaf); color:var(--leaf-dark);
+    border-radius:10px; padding:.7rem 1rem; margin-top:1rem}
+
+  /* Tabs */
+  nav.tabs{display:flex; gap:.5rem; flex-wrap:wrap; margin:0 0 1.1rem}
+  nav.tabs button{
+    min-height:var(--tap); padding:.5em 1.05em; border-radius:999px;
+    border:2px solid var(--line); background:var(--paper); font-weight:600;
+  }
+  nav.tabs button[aria-selected="true"]{background:var(--leaf); border-color:var(--leaf); color:#fff}
+
+  /* Dose wheel — CSS 3D depth experience.
+     A tilted ring of today's dose cards: it gives the day a spatial shape
+     (morning at the top, night at the bottom) for family members scanning
+     at a glance. It is decoration layered over the same data as the list
+     below it; the list remains the primary, fully accessible view. */
+  .wheel-scene{perspective:900px; display:grid; place-items:center; padding:.6rem 0 .2rem}
+  .wheel{
+    position:relative; width:270px; height:270px; transform-style:preserve-3d;
+    transform:rotateX(58deg); transition:transform .8s ease;
+  }
+  .wheel:hover{transform:rotateX(58deg) rotateZ(12deg)}
+  .wheel .spoke{
+    position:absolute; left:50%; top:50%; width:104px; margin-left:-52px;
+    transform-origin:50% 0; text-align:center;
+  }
+  .wheel .dot{
+    display:block; margin:0 auto; width:58px; height:58px; border-radius:50%;
+    display:grid; place-items:center; font-weight:700; font-size:.8rem; color:#fff;
+    border:3px solid #fff; box-shadow:0 4px 10px rgba(90,55,20,.25);
+    transform:rotateX(-58deg);
+  }
+  .dot.taken{background:var(--leaf)} .dot.missed{background:var(--rose)}
+  .dot.pending{background:var(--marigold); color:var(--ink)}
+  .wheel .hub{
+    position:absolute; left:50%; top:50%; width:86px; height:86px; margin:-43px 0 0 -43px;
+    border-radius:50%; background:var(--paper); border:2px solid var(--line);
+    display:grid; place-items:center; text-align:center; font-size:.78rem; font-weight:700;
+    transform:translateZ(26px); padding:.3rem;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .wheel{transition:none} .wheel:hover{transform:rotateX(58deg)}
+    *{scroll-behavior:auto !important}
+  }
+
+  .dose-row{
+    display:flex; flex-wrap:wrap; gap:.8rem; align-items:center; justify-content:space-between;
+    border-top:1px solid var(--line); padding:.9rem 0;
+  }
+  .dose-row:first-of-type{border-top:none}
+  .dose-when{font-family:Georgia,serif; font-size:1.5rem; min-width:5.2em}
+  .dose-what{flex:1 1 220px}
+  .dose-what .name{font-weight:700; font-size:1.12rem}
+  .pill{display:inline-block; padding:.12em .65em; border-radius:999px; font-size:.85rem; font-weight:700}
+  .pill.taken{background:#DDEEDD; color:var(--leaf-dark)}
+  .pill.missed{background:#F8D9D5; color:#7C1F18}
+  .pill.pending{background:#FDF0D5; color:#7A5410}
+  .pill.low{background:#F8D9D5; color:#7C1F18}
+  .dose-actions{display:flex; gap:.5rem; flex-wrap:wrap}
+  .dose-actions .btn{min-width:120px}
+
+  .grid{display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+  .grid > .card{margin-bottom:0}
+  .stat{font-family:Georgia,serif; font-size:2.4rem; color:var(--leaf-dark)}
+  .feed-item,.outbox-item{border-top:1px solid var(--line); padding:.75rem 0}
+  .feed-item:first-of-type,.outbox-item:first-of-type{border-top:none}
+  .feed-item time,.outbox-item time{color:var(--ink-soft); font-size:.9rem}
+  .flag{border-left:6px solid var(--marigold); background:#FFF6E3; border-radius:8px; padding:.8rem 1rem; margin:.7rem 0}
+  .flag.high{border-color:var(--rose); background:#FDF0EE}
+  .summary-box{background:#EFF6F0; border:1px solid var(--leaf); border-radius:12px; padding:1rem 1.1rem; font-size:1.12rem}
+  .form-grid{display:grid; gap:.2rem 1rem; grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .checkline{display:flex; gap:.6rem; align-items:center; margin-top:.9rem}
+  .checkline label{margin:0}
+  details{margin-top:.6rem}
+  summary{cursor:pointer; font-weight:600; min-height:var(--tap); display:flex; align-items:center}
+  .hidden{display:none !important}
+  footer{max-width:1060px; margin:0 auto; padding:0 clamp(1rem,4vw,2rem) 2.5rem; color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header class="topbar">
+  <div class="brand">
+    <div class="mark" aria-hidden="true">C</div>
+    <div>
+      <h1>CareCircle</h1>
+      <p>Medicines, appointments and family — one caring circle.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn ghost" id="elderToggle" type="button" aria-pressed="false">Elder Mode: Off</button>
+    <button class="btn ghost hidden" id="logoutBtn" type="button">Log out</button>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ============ LOGIN ============ -->
+  <section id="loginView" class="login-wrap" aria-labelledby="loginTitle">
+    <div class="card">
+      <h2 id="loginTitle">Welcome to the circle</h2>
+      <p class="big">One passcode opens the shared care profile of
+        <strong>Kamla Devi</strong> — for Kamla herself, her caretaker and
+        her family.</p>
+      <form id="loginForm">
+        <label for="fName">Your name</label>
+        <input id="fName" name="name" autocomplete="name" required>
+        <label for="fRole">You are joining as</label>
+        <select id="fRole" name="role">
+          <option value="elder">Elder (Kamla Devi)</option>
+          <option value="caretaker">Caretaker</option>
+          <option value="family">Family member (read-only)</option>
+        </select>
+        <label for="fPass">Profile passcode</label>
+        <input id="fPass" name="passcode" type="password" autocomplete="current-password" required>
+        <p><button class="btn warm" type="submit" id="loginSubmit" style="width:100%">Enter CareCircle</button></p>
+        <div id="loginError" class="error hidden" role="alert"></div>
+      </form>
+      <div class="demo-note">
+        <strong>For judges — demo profile:</strong> passcode
+        <code>kamla123</code>. Try it as each role: the family role is
+        read-only, exactly as designed.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ APP ============ -->
+  <section id="appView" class="hidden" aria-label="CareCircle dashboard">
+    <p class="big" id="helloLine" style="margin-top:0"></p>
+    <nav class="tabs" role="tablist" aria-label="CareCircle sections">
+      <button role="tab" id="tab-today" aria-controls="panel-today" aria-selected="true" data-tab="today">Today</button>
+      <button role="tab" id="tab-meds" aria-controls="panel-meds" aria-selected="false" data-tab="meds">Medicines</button>
+      <button role="tab" id="tab-appts" aria-controls="panel-appts" aria-selected="false" data-tab="appts">Appointments</button>
+      <button role="tab" id="tab-reminders" aria-controls="panel-reminders" aria-selected="false" data-tab="reminders">Reminders</button>
+      <button role="tab" id="tab-feed" aria-controls="panel-feed" aria-selected="false" data-tab="feed">Family Feed</button>
+      <button role="tab" id="tab-assistant" aria-controls="panel-assistant" aria-selected="false" data-tab="assistant">Care Assistant</button>
+    </nav>
+
+    <div id="panel-today" role="tabpanel" aria-labelledby="tab-today">
+      <div class="card">
+        <h2>Today's doses</h2>
+        <div class="wheel-scene" aria-hidden="true"><div class="wheel" id="doseWheel"></div></div>
+        <div id="todayList"></div>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <h2>Adherence — last 7 days</h2>
+          <p class="stat" id="adh7">–</p>
+          <p class="muted" id="adh7Detail"></p>
+        </div>
+        <div class="card">
+          <h2>Adherence — last 30 days</h2>
+          <p class="stat" id="adh30">–</p>
+          <p class="muted" id="adh30Detail"></p>
+        </div>
+        <div class="card">
+          <h2>Next appointment</h2>
+          <p class="big" id="nextAppt">–</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-meds" role="tabpanel" aria-labelledby="tab-meds" class="hidden">
+      <div class="card">
+        <h2>Medicines</h2>
+        <div id="medList"></div>
+      </div>
+      <div class="card" id="medFormCard">
+        <h2 id="medFormTitle">Add a medicine</h2>
+        <form id="medForm">
+          <input type="hidden" id="mId">
+          <div class="form-grid">
+            <div><label for="mName">Medicine name</label><input id="mName" required></div>
+            <div><label for="mDose">Dose (e.g. 1 tablet)</label><input id="mDose" required></div>
+            <div><label for="mTimes">Times of day (comma separated, 24h)</label><input id="mTimes" placeholder="08:00, 20:00" required></div>
+            <div><label for="mCategory">Used for (e.g. Blood pressure)</label><input id="mCategory"></div>
+            <div><label for="mStock">Tablets/capsules in stock</label><input id="mStock" type="number" min="0" value="30" required></div>
+            <div><label for="mPerDose">Units per dose</label><input id="mPerDose" type="number" min="1" value="1" required></div>
+          </div>
+          <div class="checkline"><input type="checkbox" id="mFood"><label for="mFood">Take with food</label></div>
+          <label for="mNotes">Notes (optional)</label><input id="mNotes">
+          <p style="display:flex;gap:.6rem;flex-wrap:wrap">
+            <button class="btn primary" type="submit" id="medSubmit">Save medicine</button>
+            <button class="btn plain hidden" type="button" id="medCancel">Cancel editing</button>
+          </p>
+          <div id="medError" class="error hidden" role="alert"></div>
+          <div id="medOk" class="ok-note hidden" role="status"></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="panel-appts" role="tabpanel" aria-labelledby="tab-appts" class="hidden">
+      <div class="card">
+        <h2>Upcoming appointments</h2>
+        <div id="apptList"></div>
+      </div>
+      <div class="card" id="apptFormCard">
+        <h2>Add an appointment</h2>
+        <form id="apptForm">
+          <div class="form-grid">
+            <div><label for="aDoctor">Doctor</label><input id="aDoctor" required></div>
+            <div><label for="aPurpose">Purpose</label><input id="aPurpose" required></div>
+            <div><label for="aWhen">Date</label><input id="aWhen" type="date" required></div>
+            <div><label for="aTime">Time</label><input id="aTime" type="time" required></div>
+            <div><label for="aLoc">Location</label><input id="aLoc"></div>
+          </div>
+          <p><button class="btn primary" type="submit">Save appointment</button></p>
+          <div id="apptError" class="error hidden" role="alert"></div>
+          <div id="apptOk" class="ok-note hidden" role="status"></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="panel-reminders" role="tabpanel" aria-labelledby="tab-reminders" class="hidden">
+      <div class="card">
+        <h2>Reminder centre</h2>
+        <p class="muted">CareCircle works out what needs attention right now.
+          Reminder messages are drafted into the outbox below — in this demo
+          they are <strong>generated and logged in the app</strong>; no real
+          email is sent because no mail service is configured.</p>
+        <h3>Missed doses</h3><div id="remMissed"></div>
+        <h3>Coming up soon</h3><div id="remUpcoming"></div>
+        <h3>Refills</h3><div id="remRefills"></div>
+      </div>
+      <div class="card">
+        <h2>Reminder outbox</h2>
+        <div id="outboxList"></div>
+      </div>
+    </div>
+
+    <div id="panel-feed" role="tabpanel" aria-labelledby="tab-feed" class="hidden">
+      <div class="card">
+        <h2>Family feed</h2>
+        <p class="muted">Everything the circle needs to know — doses taken or
+          missed, schedule changes and new appointments, as they happen.</p>
+        <div id="feedList"></div>
+      </div>
+    </div>
+
+    <div id="panel-assistant" role="tabpanel" aria-labelledby="tab-assistant" class="hidden">
+      <div class="card">
+        <h2>Care Assistant</h2>
+        <p class="muted">Rule-based assistance — transparent checks, no
+          black-box AI and no language model. It never gives medical advice;
+          it flags things worth a conversation with the doctor.</p>
+        <h3>Today's summary for the family</h3>
+        <div class="summary-box" id="assistantSummary"></div>
+        <h3 style="margin-top:1.2rem">Schedule safety checks</h3>
+        <div id="safetyList"></div>
+        <h3 style="margin-top:1.2rem">Refill predictions</h3>
+        <div id="refillList"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>CareCircle — built for the Catalyst Solo AI Hackathon (PromptWars ×
+    Catalyst). All people and data on this page are synthetic demo data.
+    Reminder messages are generated in-app; no real email is sent.</p>
+</footer>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+let STATE = null;
+let ME = null;
+
+async function api(method, path, data) {
+  const res = await fetch(path, {
+    method,
+    headers: data ? {"Content-Type": "application/json"} : {},
+    body: data ? JSON.stringify(data) : undefined,
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(payload.error || "Something went wrong.");
+  return payload;
+}
+
+function showError(el, msg) { el.textContent = msg; el.classList.remove("hidden"); }
+function hideError(el) { el.classList.add("hidden"); }
+
+/* ---------- Elder Mode ---------- */
+function setElderMode(on) {
+  document.body.classList.toggle("elder-mode", on);
+  $("elderToggle").textContent = "Elder Mode: " + (on ? "On" : "Off");
+  $("elderToggle").setAttribute("aria-pressed", String(on));
+  try { localStorage.setItem("cc_elder", on ? "1" : "0"); } catch (e) {}
+}
+$("elderToggle").addEventListener("click", () => {
+  setElderMode(!document.body.classList.contains("elder-mode"));
+});
+try { if (localStorage.getItem("cc_elder") === "1") setElderMode(true); } catch (e) {}
+
+/* ---------- Tabs (with arrow-key navigation) ---------- */
+const tabBtns = Array.from(document.querySelectorAll("nav.tabs [role=tab]"));
+function selectTab(btn, focus) {
+  tabBtns.forEach((b) => {
+    const on = b === btn;
+    b.setAttribute("aria-selected", String(on));
+    $("panel-" + b.dataset.tab).classList.toggle("hidden", !on);
+  });
+  if (focus) btn.focus();
+}
+tabBtns.forEach((btn, i) => {
+  btn.addEventListener("click", () => selectTab(btn, false));
+  btn.addEventListener("keydown", (e) => {
+    let j = null;
+    if (e.key === "ArrowRight") j = (i + 1) % tabBtns.length;
+    if (e.key === "ArrowLeft") j = (i - 1 + tabBtns.length) % tabBtns.length;
+    if (j !== null) { e.preventDefault(); selectTab(tabBtns[j], true); }
+  });
+});
+
+/* ---------- Login / logout ---------- */
+$("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideError($("loginError"));
+  const btn = $("loginSubmit");
+  btn.disabled = true; btn.textContent = "Opening the circle…";
+  try {
+    ME = await api("POST", "/api/login", {
+      name: $("fName").value, role: $("fRole").value,
+      passcode: $("fPass").value,
+    });
+    $("loginView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    $("logoutBtn").classList.remove("hidden");
+    await refresh();
+  } catch (err) {
+    showError($("loginError"), err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Enter CareCircle";
+  }
+});
+$("logoutBtn").addEventListener("click", async () => {
+  await api("POST", "/api/logout", {}).catch(() => {});
+  location.reload();
+});
+
+/* ---------- Rendering ---------- */
+function statusPill(s) { return '<span class="pill ' + s + '">' + s + "</span>"; }
+
+function renderToday(state) {
+  const rows = [];
+  const wheelDots = [];
+  const slots = [];
+  state.medications.forEach((m) => m.today.forEach((s) =>
+    slots.push({time: s.time, status: s.status, med: m})));
+  slots.sort((a, b) => a.time.localeCompare(b.time));
+  slots.forEach((s, i) => {
+    const angle = slots.length ? (360 / slots.length) * i : 0;
+    wheelDots.push(
+      '<div class="spoke" style="transform:rotate(' + angle + 'deg) translateY(-104px)">' +
+      '<span class="dot ' + s.status + '">' + esc(s.time) + "</span></div>");
+    const canLog = s.status === "pending";
+    rows.push(
+      '<div class="dose-row">' +
+      '<div class="dose-when">' + esc(s.time) + "</div>" +
+      '<div class="dose-what"><span class="name">' + esc(s.med.name) + "</span> — " +
+      esc(s.med.dose) + (s.med.with_food ? " · with food" : "") + "<br>" +
+      statusPill(s.status) + "</div>" +
+      (canLog
+        ? '<div class="dose-actions">' +
+          '<button class="btn primary" data-dose="' + esc(s.med.id) + "|" + esc(s.time) + '|taken">✓ Taken</button>' +
+          '<button class="btn danger" data-dose="' + esc(s.med.id) + "|" + esc(s.time) + '|missed">Missed</button></div>'
+        : '<div class="dose-actions"><span class="muted">Logged</span></div>') +
+      "</div>");
+  });
+  $("doseWheel").innerHTML = wheelDots.join("") +
+    '<div class="hub">Today<br>' + slots.length + " doses</div>";
+  $("todayList").innerHTML = rows.length ? rows.join("") :
+    "<p>No medicines are scheduled yet.</p>";
+  document.querySelectorAll("[data-dose]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const [medId, time, status] = b.dataset.dose.split("|");
+      b.disabled = true;
+      try { await api("POST", "/api/dose", {med_id: medId, time, status}); await refresh(); }
+      catch (err) { alert(err.message); b.disabled = false; }
+    }));
+  const a7 = state.adherence7, a30 = state.adherence30;
+  $("adh7").textContent = a7.pct + "%";
+  $("adh7Detail").textContent = a7.taken + " taken · " + a7.missed + " missed, of " + a7.total + " doses due.";
+  $("adh30").textContent = a30.pct + "%";
+  $("adh30Detail").textContent = a30.taken + " taken · " + a30.missed + " missed, of " + a30.total + " doses due.";
+  const next = state.appointments[0];
+  $("nextAppt").textContent = next
+    ? next.doctor + " — " + next.purpose + ", " + next.when + " at " + next.time +
+      (next.location ? " (" + next.location + ")" : "")
+    : "No upcoming appointments.";
+}
+
+function renderMeds(state) {
+  const readOnly = ME && ME.role === "family";
+  $("medFormCard").classList.toggle("hidden", !!readOnly);
+  $("medList").innerHTML = state.medications.map((m) =>
+    '<div class="dose-row"><div class="dose-what">' +
+    '<span class="name">' + esc(m.name) + "</span> — " + esc(m.dose) + "<br>" +
+    '<span class="muted">At ' + m.times.map(esc).join(", ") +
+    (m.with_food ? " · with food" : "") +
+    (m.category ? " · for " + esc(m.category) : "") + "</span><br>" +
+    "Stock: <strong>" + m.stock + "</strong> · about " +
+    (m.days_left === null ? "—" : m.days_left + " day(s) left") +
+    (m.low ? ' <span class="pill low">refill soon</span>' : "") +
+    (m.notes ? "<br>" + esc(m.notes) : "") +
+    "</div>" +
+    (readOnly ? "" :
+      '<div class="dose-actions">' +
+      '<button class="btn plain" data-edit="' + esc(m.id) + '">Edit</button>' +
+      '<button class="btn danger" data-del="' + esc(m.id) + '">Remove</button></div>') +
+    "</div>").join("") || "<p>No medicines yet.</p>";
+  document.querySelectorAll("[data-edit]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const m = STATE.medications.find((x) => x.id === b.dataset.edit);
+      if (!m) return;
+      $("mId").value = m.id; $("mName").value = m.name; $("mDose").value = m.dose;
+      $("mTimes").value = m.times.join(", "); $("mCategory").value = m.category;
+      $("mStock").value = m.stock; $("mPerDose").value = m.per_dose;
+      $("mFood").checked = m.with_food; $("mNotes").value = m.notes;
+      $("medFormTitle").textContent = "Edit medicine";
+      $("medCancel").classList.remove("hidden");
+      $("mName").focus();
+    }));
+  document.querySelectorAll("[data-del]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      if (!confirm("Remove this medicine from the schedule?")) return;
+      try {
+        await api("POST", "/api/medications/" + b.dataset.del, {action: "delete"});
+        await refresh();
+      } catch (err) { alert(err.message); }
+    }));
+}
+
+function resetMedForm() {
+  $("medForm").reset(); $("mId").value = "";
+  $("medFormTitle").textContent = "Add a medicine";
+  $("medCancel").classList.add("hidden");
+}
+$("medCancel").addEventListener("click", resetMedForm);
+$("medForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideError($("medError")); hideError($("medOk"));
+  const payload = {
+    name: $("mName").value, dose: $("mDose").value,
+    times: $("mTimes").value.split(",").map((s) => s.trim()).filter(Boolean),
+    category: $("mCategory").value, stock: Number($("mStock").value),
+    per_dose: Number($("mPerDose").value), with_food: $("mFood").checked,
+    notes: $("mNotes").value,
+  };
+  try {
+    if ($("mId").value) await api("POST", "/api/medications/" + $("mId").value, payload);
+    else await api("POST", "/api/medications", payload);
+    resetMedForm();
+    const ok = $("medOk"); ok.textContent = "Saved. The family feed has been updated.";
+    ok.classList.remove("hidden");
+    await refresh();
+  } catch (err) { showError($("medError"), err.message); }
+});
+
+function renderAppts(state) {
+  const readOnly = ME && ME.role === "family";
+  $("apptFormCard").classList.toggle("hidden", !!readOnly);
+  $("apptList").innerHTML = state.appointments.map((a) =>
+    '<div class="dose-row"><div class="dose-when">' + esc(a.time) + "</div>" +
+    '<div class="dose-what"><span class="name">' + esc(a.doctor) + "</span> — " +
+    esc(a.purpose) + "<br><span class='muted'>" + esc(a.when) +
+    (a.location ? " · " + esc(a.location) : "") + "</span></div>" +
+    (readOnly ? "" :
+      '<div class="dose-actions"><button class="btn danger" data-adel="' +
+      esc(a.id) + '">Remove</button></div>') + "</div>").join("") ||
+    "<p>No upcoming appointments.</p>";
+  document.querySelectorAll("[data-adel]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      if (!confirm("Remove this appointment?")) return;
+      try {
+        await api("POST", "/api/appointments/" + b.dataset.adel, {action: "delete"});
+        await refresh();
+      } catch (err) { alert(err.message); }
+    }));
+}
+$("apptForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hideError($("apptError")); hideError($("apptOk"));
+  try {
+    await api("POST", "/api/appointments", {
+      doctor: $("aDoctor").value, purpose: $("aPurpose").value,
+      when: $("aWhen").value, time: $("aTime").value, location: $("aLoc").value,
+    });
+    $("apptForm").reset();
+    const ok = $("apptOk"); ok.textContent = "Appointment saved.";
+    ok.classList.remove("hidden");
+    await refresh();
+  } catch (err) { showError($("apptError"), err.message); }
+});
+
+function renderReminders(state) {
+  const r = state.reminders;
+  $("remMissed").innerHTML = r.missed.length ? r.missed.map((m) =>
+    '<p>⚠️ <strong>' + esc(m.name) + "</strong> (" + esc(m.dose) + ") — " +
+    esc(m.time) + " dose not taken yet.</p>").join("") :
+    "<p>Nothing missed. 🌿</p>";
+  $("remUpcoming").innerHTML = r.upcoming.length ? r.upcoming.map((m) =>
+    "<p>🔔 <strong>" + esc(m.name) + "</strong> (" + esc(m.dose) + ") at " +
+    esc(m.time) + " — in about " + m.in_minutes + " minutes" +
+    (m.with_food ? ", with food" : "") + ".</p>").join("") :
+    "<p>No dose is due in the next 90 minutes.</p>";
+  $("remRefills").innerHTML = r.refills.length ? r.refills.map((m) =>
+    '<p>💊 <strong>' + esc(m.name) + "</strong> — " + m.stock +
+    " left, about " + m.days_left + " day(s); runs out around " +
+    esc(m.runs_out) + ".</p>").join("") : "<p>Stock levels look fine.</p>";
+  $("outboxList").innerHTML = state.outbox.length ? state.outbox.map((m) =>
+    '<div class="outbox-item"><time>' + esc(m.at.replace("T", " ")) +
+    "</time> · To <strong>" + esc(m.to_name) + "</strong> (" + esc(m.to_role) +
+    ')<br><strong>' + esc(m.subject) + "</strong><br>" + esc(m.body) + "</div>"
+  ).join("") : "<p>No reminder messages generated yet.</p>";
+}
+
+function renderFeed(state) {
+  $("feedList").innerHTML = state.feed.length ? state.feed.map((e) =>
+    '<div class="feed-item"><time>' + esc(e.at.replace("T", " ")) +
+    "</time><br>" + esc(e.text) + "</div>").join("") :
+    "<p>No activity yet.</p>";
+}
+
+function renderAssistant(state) {
+  $("assistantSummary").textContent = state.assistant.summary;
+  const flags = state.assistant.safety;
+  $("safetyList").innerHTML = flags.length ? flags.map((f) =>
+    '<div class="flag' + (f.severity === "high" ? " high" : "") + '">' +
+    esc(f.text) + "</div>").join("") :
+    "<p>No schedule concerns found. 🌿</p>";
+  const refills = state.assistant.refills;
+  $("refillList").innerHTML = refills.length ? refills.map((m) =>
+    "<p>💊 <strong>" + esc(m.name) + "</strong> — about " + m.days_left +
+    " day(s) of stock left (runs out around " + esc(m.runs_out) + ").</p>"
+  ).join("") : "<p>All medicines have more than five days of stock.</p>";
+}
+
+async function refresh() {
+  STATE = await api("GET", "/api/state");
+  $("helloLine").innerHTML = "Namaste, <strong>" + esc(ME.name) + "</strong> — " +
+    "you are in <strong>" + esc(STATE.elder.name) + "'s</strong> care circle as " +
+    esc(ME.role) + (ME.role === "family" ? " (read-only)" : "") + ".";
+  renderToday(STATE); renderMeds(STATE); renderAppts(STATE);
+  renderReminders(STATE); renderFeed(STATE); renderAssistant(STATE);
+}
+</script>
+</body>
+</html>
