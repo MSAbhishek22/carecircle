@@ -4,6 +4,8 @@
 family — medicines, appointments, adherence and reminders, with the elder at
 the centre of every decision.**
 
+**Live demo:** https://carecircle-murex.vercel.app — open it and sign in with passcode `kamla123` to try the demo profile.
+
 Built for the **Catalyst Solo AI Hackathon (PromptWars × Catalyst)**,
 challenge: *Elderly Care & Medication Management Platform*.
 
