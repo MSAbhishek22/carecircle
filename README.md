@@ -1,60 +1,41 @@
-# CareCircle — Elderly Care & Medication Management
+# CareCircle — one shared care page for an elderly parent
 
-**One shared care profile for an elderly person, their caretakers and their
-family — medicines, appointments, adherence and reminders, with the elder at
-the centre of every decision.**
+**Live demo: https://carecircle-murex.vercel.app** — open it and sign in with passcode `kamla123` to try the demo profile.
 
-**Live demo:** https://carecircle-murex.vercel.app — open it and sign in with passcode `kamla123` to try the demo profile.
+Picture a father who takes four medicines a day, in a house in one city, while his son works in another. A dose gets missed on Tuesday. The son finds out on Friday, on a phone call, from memory. CareCircle exists so the family stops guessing: one shared page for the elder, the caretaker and the family, where everyone sees the same truth about medicines, doses and appointments.
 
-Built for the **Catalyst Solo AI Hackathon (PromptWars × Catalyst)**,
-challenge: *Elderly Care & Medication Management Platform*.
+## The problem
 
-> **Demo profile:** elder **Kamla Devi**, passcode **`kamla123`** — shown on
-> the login page so judges can enter immediately. Try all three roles; the
-> family role is read-only, exactly as designed.
+Elderly parents often take several medicines at set times every day. The people who love them are split across houses and cities, and the only shared record is phone calls and memory. Missed doses stay invisible until they turn into a health problem.
 
-Pure Python 3 standard library — no dependencies, nothing to install.
+## Who it is for, and who would pay
 
----
+For elderly people living at home, the caretakers who help them daily, and their adult children who live away. The family is the paying side: one small monthly fee per family, so that everyone — son, daughter, caretaker — sees the same medicine record instead of asking each other.
 
-## How it answers the brief
+## What works today
 
-| Brief requirement | CareCircle implementation |
-|---|---|
-| Shared ecosystem: elder, caretakers, family on one profile | One care profile per elder; everyone joins with the same profile passcode and picks their role |
-| Secure, passcode-based access | Passcode stored only as a **salted PBKDF2-HMAC-SHA256 hash** (120k rounds), constant-time verification, HttpOnly session cookies; plaintext is never stored or logged |
-| View / add / edit / manage medication schedules | Full medicine CRUD: name, dose, multiple times of day, with-food flag, stock, therapy category — server-side validated |
-| Track adherence | Dose logging (taken / missed) per scheduled slot; adherence % over 7 and 30 days, counting only doses already due |
-| Doctor appointments | Add / list / remove upcoming appointments; next appointment on the dashboard |
-| Email reminders for missed doses, upcoming doses, refills | A **reminder centre** computes missed doses (30-min grace), doses due within 90 minutes and refill alerts, and drafts the exact reminder messages into an **outbox** addressed to the elder **and** caretakers |
-| Real-time updates to family | A **family feed** streams every dose taken/missed, schedule change and appointment as it happens |
-| Go beyond a basic reminder app — AI features | **Care Assistant** (deterministic, rule-based — no LLM, and it says so): schedule-safety checks, refill prediction, and a plain-language daily summary for family |
-| Intuitive and accessible for elderly users | Large type (18px base), high contrast, ≥52px tap targets, **Elder Mode** (22px+, 64px targets), keyboard-navigable tabs, semantic HTML, aria labels, visible focus, `prefers-reduced-motion` respected |
-| Elder at the centre of their own decisions | The elder has full manage rights over their own profile; the family role is read-only; the assistant flags concerns but never gives medical advice |
+Try it with the demo profile: elder **Kamla Devi**, passcode **`kamla123`** (shown on the login page). Pick any of the three roles; the family role is read-only, exactly as designed.
 
-### Care Assistant (rule-based, transparent)
+- **One care profile per elder.** Everyone joins with the same profile passcode and picks a role: elder, caretaker or family. The elder keeps full control of their own profile.
+- **Medicine schedules, managed properly.** Add, edit and remove medicines with dose, multiple times of day, with-food flag, stock and therapy category — all validated on the server.
+- **Adherence you can trust.** Every scheduled dose is logged taken or missed, and the app shows adherence over 7 and 30 days, counting only doses that were already due. In the demo profile's seeded history: 29 doses taken, 5 missed — 85.3%.
+- **Appointments.** Add, list and remove doctor appointments; the next one sits on the dashboard.
+- **Reminder centre.** It works out missed doses (after a 30-minute grace), doses due within 90 minutes, and refills running low, and drafts the exact reminder messages into an outbox addressed to the elder and the caretakers.
+- **Family feed.** Every dose taken or missed, schedule change and appointment appears in one stream, as it happens.
+- **Care Assistant.** A plain rule-based helper — no AI model, and it says so. It flags two medicines scheduled within 30 minutes of each other, the same medicine entered twice, and two medicines for the same condition (the demo profile shows one: Amlodipine at 08:00 and Telmisartan at 08:15, both for blood pressure). It predicts refills from stock and schedule ("Metformin — about 3 days left") and writes a short daily summary in plain words for the family. It flags concerns; it never gives medical advice.
+- **Built for elderly eyes.** 18px base type, high contrast, tap targets of at least 52px, an Elder Mode with 22px+ type and 64px targets, keyboard-navigable tabs, aria labels and reduced-motion support.
 
-1. **Schedule-safety checks** — flags two medicines scheduled within
-   30 minutes of each other, the same medicine entered twice, and two
-   medicines prescribed for the same condition (possible duplicate therapy).
-   The seeded profile demonstrates all of this: Amlodipine 08:00 and
-   Telmisartan 08:15, both for blood pressure.
-2. **Refill prediction** — from stock, dose size and schedule:
-   *"Metformin — about 3 day(s) left, runs out around 2026-11-18."*
-3. **Daily summary for family** — *"Kamla has taken 0 of 4 doses so far
-   today. Next dose is at 21:00 — Metformin 500 mg (1 tablet). Over the
-   last 7 days, Kamla took 85% of scheduled doses."*
+## Honest notes
 
-### Honest notes
+- **Reminders are drafted, not sent.** Messages are generated into the in-app outbox, which shows exactly what would be sent, to whom, and why. No email service is connected yet.
+- **Demo data is held in memory.** The profile lives for the life of a running instance and resets after that. A paid version would store each family's profiles and history in a database, so the record is permanent and the family can look back over months.
+- **Security is real, though.** The passcode is stored only as a salted PBKDF2-HMAC-SHA256 hash (120,000 rounds), checked in constant time, with HttpOnly session cookies. The plain passcode is never stored or logged.
+- All data is synthetic demo data. Nothing here is real medical data. The care day is always Asia/Kolkata, wherever the host runs.
 
-- **Reminders:** messages are *generated and logged in the in-app outbox*.
-  No real email is sent — no SMTP service is configured. The outbox shows
-  exactly what would be sent, to whom, and why.
-- **Data:** synthetic demo data only, held in memory. On serverless
-  hosting the profile persists for the life of a warm instance and can
-  differ across instances; a production version would move the store to
-  a database. Nothing here is real medical data.
-- **Time:** the care day is always Asia/Kolkata, wherever the host runs.
+## The numbers
+
+- 33 automated tests, all passing — passcode hashing and access control through the real HTTP layer (signed-out requests get 401, family-role changes get 403), adherence maths checked against hand-counted history, reminder windows, refill thresholds, assistant flags, and full add/edit/delete and dose-logging flows
+- 3 roles, 1 shared profile, 0 dependencies — pure Python 3 standard library
 
 ## Run it
 
@@ -65,23 +46,7 @@ python3 run.py test           # full test suite
 
 Open the page, enter any name, pick a role, passcode **`kamla123`**.
 
-## Tests
-
-**33 tests, all passing** (`python3 run.py test`), covering:
-
-- Passcode hashing: correct/wrong passcode, unique salts, no plaintext.
-- Access control through the real HTTP handler: unauthenticated → 401,
-  wrong passcode → 401, **family role mutations → 403**, family reads OK.
-- Adherence maths against hand-counted seeded history (29 taken / 5 missed
-  / 85.3% at the reference time), future doses excluded.
-- Reminder computation: missed/upcoming windows, refill threshold,
-  outbox recipients (elder + caretaker, not family), idempotent generation.
-- Care Assistant: duplicate-therapy, duplicate-name and time-clash flags,
-  clean schedules produce no flags, plain-language summary contents.
-- Workflows: add/edit/delete medicine, dose logging decrements stock and
-  writes the family feed, appointment round-trip, validation errors.
-
-## Structure
+## How it is built
 
 ```
 app/core.py     — data model, passcode security, adherence, reminders, assistant
@@ -94,11 +59,17 @@ run.py          — serve / test entry point
 vercel.json     — serverless config (rewrite all → api/index.py)
 ```
 
-## Deployment
+Deployed on Vercel (free tier): import the repo, no build command, no environment variables. See `deployment/DEPLOYMENT_RUNBOOK.md`.
 
-Vercel (free tier): import the repo, no build command, no environment
-variables. `api/index.py` serves every route; see
-`deployment/DEPLOYMENT_RUNBOOK.md`.
+## Where this can go
+
+- Saved profiles in a database, so a family's medicine history is permanent and grows month by month.
+- Real reminders — email or WhatsApp to the elder and caretakers when a dose is missed, not just drafts in an outbox.
+- A clinic version: one desk watching over many elders in a neighbourhood, with the same shared page per family.
+
+## Status and entries
+
+Built solo by M S Abhishek for the Catalyst Solo AI Hackathon (PromptWars × Catalyst), challenge: Elderly Care & Medication Management Platform, and submitted there. Live and verified at the link above.
 
 ## Licence
 
