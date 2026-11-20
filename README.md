@@ -4,6 +4,12 @@
 
 Picture a father who takes four medicines a day, in a house in one city, while his son works in another. A dose gets missed on Tuesday. The son finds out on Friday, on a phone call, from memory. CareCircle exists so the family stops guessing: one shared page for the elder, the caretaker and the family, where everyone sees the same truth about medicines, doses and appointments.
 
+## Screenshots
+
+![CareCircle — the family circle sign-in](docs/hero.png)
+
+![Inside the circle: today's doses for the parent](docs/feature.png)
+
 ## The problem
 
 Elderly parents often take several medicines at set times every day. The people who love them are split across houses and cities, and the only shared record is phone calls and memory. Missed doses stay invisible until they turn into a health problem.
